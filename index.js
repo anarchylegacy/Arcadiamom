@@ -19,7 +19,7 @@ const fs = require("fs");
 
 // Servidor Web para o Render (Mantém o bot 24/7)
 const app = express();
-app.get("/", (req, res) => res.send("Arcadiamon V5 Pro Estável Ativo!"));
+app.get("/", (req, res) => res.send("Arcadiamon V6 Ativo!"));
 app.listen(process.env.PORT || 3000, () => console.log("Web server pronto."));
 
 const client = new Client({
@@ -43,25 +43,29 @@ if (!db.inventory) db.inventory = {};
 
 function saveDB() { fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2)); }
 
-// ID do Canal de Logs vindo do Render ou definido manualmente
-const LOGS_CHANNEL = process.env.LOGS_CHANNEL_ID || "COLOQUE_AQUI_O_ID_SE_NAO_USAR_ENV";
+// ================= CONFIGURAÇÕES IMPORTANTES =================
+// 1. Defina o ID do seu servidor aqui para os comandos carregarem na hora:
+const GUILD_ID = "1496287729388880063"; 
+
+// 2. ID do Canal de Logs vindo do Render ou definido manualmente:
+const LOGS_CHANNEL = process.env.LOGS_CHANNEL_ID || "1510042537509781534";
 
 // ================= REGISTRO DOS COMANDOS DE BARRA (SLASH) =================
 const commands = [
   new SlashCommandBuilder()
     .setName("setup-ticket")
     .setDescription("Envia a central de atendimento com menu de seleção em Embed.")
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // 🔒 APENAS ADM
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   new SlashCommandBuilder()
     .setName("status")
     .setDescription("Mostra as informações de IP/Porta e status do servidor de Minecraft.")
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // 🔒 APENAS ADM
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   new SlashCommandBuilder()
     .setName("setup-staff")
     .setDescription("Envia a central completa com ferramentas de punição, avisos e eventos.")
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // 🔒 APENAS ADM
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   new SlashCommandBuilder()
     .setName("banir")
@@ -109,9 +113,13 @@ client.on("ready", async () => {
   console.log(`🤖 Bot logado como ${client.user.tag}!`);
   const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
   try {
-    await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
-    console.log("Todos os comandos configurados e sincronizados com o Discord!");
-  } catch (error) { console.error(error); }
+    // Registro focado na Guild para não sofrer com o delay global do Discord
+    await rest.put(
+      Routes.applicationGuildCommands(client.user.id, GUILD_ID), 
+      { body: commands }
+    );
+    console.log("⚡ Comandos sincronizados instantaneamente no servidor!");
+  } catch (error) { console.error("Erro ao sincronizar comandos:", error); }
 });
 
 // FUNÇÃO AUXILIAR PARA ENVIAR LOGS
