@@ -19,7 +19,7 @@ const fs = require("fs");
 
 // Servidor Web para o Render
 const app = express();
-app.get("/", (req, res) => res.send("Arcadiamon V3 Avançado Ativo!"));
+app.get("/", (req, res) => res.send("Arcadiamon V5 Pro Ativo!"));
 app.listen(process.env.PORT || 3000, () => console.log("Web server pronto."));
 
 const client = new Client({
@@ -31,46 +31,37 @@ const client = new Client({
   ]
 });
 
-// 📁 BANCO DE DADOS EXPANDIDO
+// 📁 BANCO DE DADOS
 const DATA_FILE = "./dados.json";
-let db = { inventory: {}, ai_tickets: {}, economy: {} };
+let db = { inventory: {}, ai_tickets: {} };
 
 if (fs.existsSync(DATA_FILE)) {
   try { db = JSON.parse(fs.readFileSync(DATA_FILE, "utf8")); } catch (e) { console.log(e); }
 }
 if (!db.ai_tickets) db.ai_tickets = {};
-if (!db.economy) db.economy = {};
 if (!db.inventory) db.inventory = {};
 
 function saveDB() { fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2)); }
 
-// ID do Canal de Logs vindo do Render ou definido aqui
+// ID do Canal de Logs vindo do Render ou definido manualmente
 const LOGS_CHANNEL = process.env.LOGS_CHANNEL_ID || "COLOQUE_AQUI_O_ID_SE_NAO_USAR_ENV";
-
-// Itens da Loja Configurados
-const LOJA_ITENS = [
-  { id: "1", nome: "Ultra Ball", preco: 500, desc: "Aumenta a chance de captura." },
-  { id: "2", nome: "Master Ball", preco: 5000, desc: "Captura perfeita garantida." },
-  { id: "3", nome: "Kit Treinador Inicial", preco: 1500, desc: "Vem com 5 Pokéballs e 2 Poções." },
-  { id: "4", nome: "Ovo de Pokémon Raro", preco: 8000, desc: "Choca um Pokémon aleatório raro." }
-];
 
 // ================= REGISTRO DOS COMANDOS DE BARRA (SLASH) =================
 const commands = [
   new SlashCommandBuilder()
     .setName("setup-ticket")
     .setDescription("Envia a central de atendimento com menu de seleção em Embed.")
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // 🔒 APENAS ADM
 
   new SlashCommandBuilder()
     .setName("status")
     .setDescription("Mostra as informações de IP/Porta e status do servidor de Minecraft.")
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // 🔒 APENAS ADM
 
   new SlashCommandBuilder()
     .setName("setup-staff")
-    .setDescription("Envia a central de comandos rápidos para a Staff.")
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+    .setDescription("Envia a central completa com ferramentas de punição, avisos e eventos.")
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator), // 🔒 APENAS ADM
 
   new SlashCommandBuilder()
     .setName("banir")
@@ -78,6 +69,10 @@ const commands = [
     .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers)
     .addUserOption(option => option.setName("usuario").setDescription("Usuário a ser banido").setRequired(true))
     .addStringOption(option => option.setName("motivo").setDescription("Motivo do banimento").setRequired(false)),
+
+  new SlashCommandBuilder()
+    .setName("loja")
+    .setDescription("Exibe o catálogo completo da Loja Oficial com pacotes e vips."),
 
   new SlashCommandBuilder()
     .setName("pegar")
@@ -90,18 +85,10 @@ const commands = [
     .setDescription("Mostra o seu inventário de itens."),
 
   new SlashCommandBuilder()
-    .setName("daily")
-    .setDescription("Receba suas moedas diárias para usar na loja."),
+    .setName("pokemon-status")
+    .setDescription("Mostra o status de lealdade do seu Pokémon companheiro.")
+    .addStringOption(option => option.setName("nome").setDescription("Nome do seu Pokémon").setRequired(true)),
 
-  new SlashCommandBuilder()
-    .setName("carteira")
-    .setDescription("Veja quantas moedas você possui."),
-
-  new SlashCommandBuilder()
-    .setName("loja")
-    .setDescription("Abra a loja do servidor para comprar itens com suas moedas."),
-
-  // Comandos Interativos
   new SlashCommandBuilder()
     .setName("interagir")
     .setDescription("Comandos interativos e animados com outros membros.")
@@ -123,7 +110,7 @@ client.on("ready", async () => {
   const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
   try {
     await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
-    console.log("Todos os comandos avançados foram registrados!");
+    console.log("Todos os comandos configurados e protegidos com sucesso!");
   } catch (error) { console.error(error); }
 });
 
@@ -169,7 +156,7 @@ client.on("interactionCreate", async (interaction) => {
     await interaction.reply({ embeds: [embedTicket], components: [row] });
   }
 
-  // 🎮 /status (IP E PORTA DO SERVIDOR)
+  // 🎮 /status
   if (commandName === "status") {
     const embedMinecraft = new EmbedBuilder()
       .setTitle("🎮 Status Conexão - Arcadiamon")
@@ -184,22 +171,30 @@ client.on("interactionCreate", async (interaction) => {
     await interaction.reply({ embeds: [embedMinecraft] });
   }
 
-  // 🛠️ /setup-staff
+  // 🛠️ /setup-staff (MEGA AVANÇADO COMPLETO)
   if (commandName === "setup-staff") {
-    const rowStaff = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId("staff_lock").setLabel("Bloquear Chat 🔒").setStyle(ButtonStyle.Danger),
-      new ButtonBuilder().setCustomId("staff_unlock").setLabel("Desbloquear Chat 🔓").setStyle(ButtonStyle.Success)
+    const rowStaff1 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId("staff_lock").setLabel("Trancar Chat 🔒").setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId("staff_unlock").setLabel("Abrir Chat 🔓").setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId("staff_purge").setLabel("Limpar Chat 🧹").setStyle(ButtonStyle.Secondary)
+    );
+
+    const rowStaff2 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId("staff_mute_info").setLabel("Mute 🔇").setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId("staff_ban_info").setLabel("Ban 🔨").setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId("staff_aviso_rapido").setLabel("Enviar Aviso ⚠️").setStyle(ButtonStyle.Warning),
+      new ButtonBuilder().setCustomId("staff_evento_info").setLabel("Evento 🎉").setStyle(ButtonStyle.Success)
     );
 
     const embedStaffSetup = new EmbedBuilder()
-      .setTitle("🛠️ Controle Rápido Staff")
-      .setDescription("Utilize os botões rápidos abaixo para fazer a manutenção imediata deste canal de texto.")
-      .setColor("#34495e");
+      .setTitle("⚙️ Central Suprema de Moderação — Arcadiamon")
+      .setDescription("Ações administrativas e ferramentas globais protegidas para uso exclusivo da Staff:")
+      .setColor("#2c3e50");
 
-    await interaction.reply({ embeds: [embedStaffSetup], components: [rowStaff] });
+    await interaction.reply({ embeds: [embedStaffSetup], components: [rowStaff1, rowStaff2] });
   }
 
-  // 🔨 /banir (COM LOGS DE BANIMENTO)
+  // 🔨 /banir
   if (commandName === "banir") {
     const alvo = interaction.options.getUser("usuario");
     const motivo = interaction.options.getString("motivo") || "Nenhum motivo informado.";
@@ -210,8 +205,6 @@ client.on("interactionCreate", async (interaction) => {
     }
 
     await guild.members.ban(alvo, { reason: motivo });
-    
-    // Log Avançado enviado ao canal de Logs dedicado
     await enviarLog(
       "🔨 Usuário Banido do Servidor",
       `**Infrator:** ${alvo.tag} (${alvo.id})\n**Staffer Responsável:** ${user.tag}\n**Motivo:** ${motivo}`,
@@ -219,43 +212,28 @@ client.on("interactionCreate", async (interaction) => {
       guild
     );
 
-    await interaction.reply({ content: `✅ O usuário **${alvo.tag}** foi banido com sucesso! Logs registradas.`, ephemeral: true });
+    await interaction.reply({ content: `✅ O usuário **${alvo.tag}** foi banido com sucesso!`, ephemeral: true });
   }
 
-  // 💰 ECONOMIA & LOJA SISTEMAS
-  if (commandName === "daily") {
-    if (!db.economy[user.id]) db.economy[user.id] = 0;
-    const quantia = Math.floor(Math.random() * 300) + 200; // Dá entre 200 e 500 moedas
-    db.economy[user.id] += quantia;
-    saveDB();
-
-    await interaction.reply({ content: `🪙 Você resgatou sua recompensa diária e ganhou **$${quantia} moedas**!` });
-  }
-
-  if (commandName === "carteira") {
-    const saldo = db.economy[user.id] || 0;
-    await interaction.reply({ content: `👛 Seu saldo atual é de **$${saldo} moedas**.` });
-  }
-
+  // 🛒 /loja
   if (commandName === "loja") {
     const selectLoja = new StringSelectMenuBuilder()
-      .setCustomId("menu_loja")
-      .setPlaceholder("🛒 Escolha um item para comprar");
-
-    LOJA_ITENS.forEach(item => {
-      selectLoja.addOptions(
-        new StringSelectMenuOptionBuilder()
-          .setLabel(`${item.nome} - $${item.preco}`)
-          .setDescription(item.desc)
-          .setValue(`buy_${item.id}`)
+      .setCustomId("menu_loja_real")
+      .setPlaceholder("🛒 Selecione um Pacote para comprar")
+      .addOptions(
+        new StringSelectMenuOptionBuilder().setLabel("🥉 Treinador Iniciante - R$ 4,00").setValue("pacote_iniciante").setDescription("Kit avançado + 2 Master Balls + 1 Pokemom Raro"),
+        new StringSelectMenuOptionBuilder().setLabel("🥈 Treinador Pro - R$ 10,00").setValue("pacote_pro").setDescription("Kit completo + 5 Master Balls + 2 Raros + 1 Shiny"),
+        new StringSelectMenuOptionBuilder().setLabel("🥇 Mestre Pokémon - R$ 18,00").setValue("pacote_mestre").setDescription("Kit lendário + 10 Master Balls + 1 Lendário + 2 Shinys"),
+        new StringSelectMenuOptionBuilder().setLabel("👑 Pacote Supremo - R$ 24,00").setValue("pacote_supremo").setDescription("Kit FULL OP + 20 Master Balls + 2 Lendários + 3 Shinys + Tag"),
+        new StringSelectMenuOptionBuilder().setLabel("✨ Kit VIP Pokémon - R$ 35,90").setValue("pacote_vip").setDescription("4 Raros + 25k Coins + 32 Candies + 10 Master + 1 Shiny + Tag")
       );
-    });
 
     const rowLoja = new ActionRowBuilder().addComponents(selectLoja);
+
     const embedLoja = new EmbedBuilder()
-      .setTitle("🛒 Loja Oficial do Servidor Arcadiamon")
-      .setDescription("Use suas moedas ganhas com o `/daily` para comprar recursos valiosos abaixo:")
-      .setColor("#2ecc71");
+      .setTitle("⚡🔥 POKEARCADIAMON SERVER - LOJA OFICIAL 🔥⚡")
+      .setDescription("Consulte nossos pacotes e vips ativos digitando `/loja` no chat!")
+      .setColor("#ffcc00");
 
     await interaction.reply({ embeds: [embedLoja], components: [rowLoja] });
   }
@@ -271,7 +249,18 @@ client.on("interactionCreate", async (interaction) => {
 
   if (commandName === "inv") {
     let inv = db.inventory[user.id] || [];
-    await interaction.reply({ content: `🎒 **Seu Inventário:** ${inv.join(", ") || "Vazio."}` });
+    await interaction.reply({ content: `🎒 **Seu Inventário Virtual:** ${inv.join(", ") || "Vazio."}` });
+  }
+
+  // 🐾 /pokemon-status
+  if (commandName === "pokemon-status") {
+    const nomePoke = interaction.options.getString("nome");
+    const felicidade = Math.floor(Math.random() * 100);
+    const embedStatus = new EmbedBuilder()
+      .setTitle(`📊 Status: ${nomePoke}`)
+      .setDescription(`❤️ **Felicidade/Lealdade:** ${felicidade}%\n⚡ **Status de Combate:** Pronto para batalha!`)
+      .setColor("#3498db");
+    await interaction.reply({ embeds: [embedStatus] });
   }
 
   // 🎭 COMANDOS INTERATIVOS
@@ -282,34 +271,25 @@ client.on("interactionCreate", async (interaction) => {
     let textoAcao = "";
     if (acao === "beijar") textoAcao = `💋 ${user} deu um beijo carinhoso em ${alvo}!`;
     if (acao === "abracar") textoAcao = `🤗 ${user} deu um abraço apertado em ${alvo}!`;
-    if (acao === "chutar") textoAcao = `🦶 ${user} deu um chute cômico em ${alvo}!`;
-    if (acao === "atacar") textoAcao = `⚔️ ${user} mandou seu Pokémon principal atacar o Pokémon de ${alvo}! Que batalha épica!`;
+    if (acao === "chutar") textoAcao = `🦶 ${user} deu um chute em ${alvo}!`;
+    if (acao === "atacar") textoAcao = `⚔️ ${user} mandou seu Pokémon atacar o Pokémon de ${alvo}! Batalha valendo!`;
 
     const embedInterativo = new EmbedBuilder().setDescription(textoAcao).setColor("#e91e63");
     await interaction.reply({ embeds: [embedInterativo] });
   }
 });
 
-// ================= COMPRA NA LOJA (SELECT MENU) =================
+// ================= INTERAÇÕES DO MENU DA LOJA =================
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isStringSelectMenu()) return;
 
-  if (interaction.customId === "menu_loja") {
-    const itemId = interaction.values[0].replace("buy_", "");
-    const itemSelecionado = LOJA_ITENS.find(i => i.id === itemId);
-    const userId = interaction.user.id;
-    const saldo = db.economy[userId] || 0;
+  if (interaction.customId === "menu_loja_real") {
+    const embedCompraInstrucoes = new EmbedBuilder()
+      .setTitle("🛒 Como finalizar sua Compra")
+      .setDescription(`Olá ${interaction.user}, abra um chamado na categoria **💵 Comprar Pokémon/kits** nos Tickets para realizar o pagamento Pix com a Staff!`)
+      .setColor("#2ecc71");
 
-    if (saldo < itemSelecionado.preco) {
-      return interaction.reply({ content: `❌ Você não tem moedas suficientes! Você precisa de **$${itemSelecionado.preco}** e só possui **$${saldo}**.`, ephemeral: true });
-    }
-
-    db.economy[userId] -= itemSelecionado.preco;
-    if (!db.inventory[userId]) db.inventory[userId] = [];
-    db.inventory[userId].push(itemSelecionado.nome);
-    saveDB();
-
-    await interaction.reply({ content: `🛒 Compra realizada! Você comprou **${itemSelecionado.nome}** por **$${itemSelecionado.preco}** moedas e foi enviado ao seu \`/inv\`.` });
+    await interaction.reply({ embeds: [embedCompraInstrucoes], ephemeral: true });
   }
 });
 
@@ -349,18 +329,52 @@ client.on("interactionCreate", async (interaction) => {
     } catch (e) { console.error(e); }
   }
 
-  // Interações de botõesStaff rápidos do comando /setup-staff
+  // ================= CONTROLE DE BOTÕES SUPREMOS DA STAFF (🔒 SÓ ADM/MOD) =================
   if (interaction.isButton()) {
+    const botoesStaff = ["staff_lock", "staff_unlock", "staff_purge", "staff_mute_info", "staff_ban_info", "staff_aviso_rapido", "staff_evento_info"];
+    
+    if (botoesStaff.includes(interaction.customId)) {
+      if (!interaction.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) {
+        return interaction.reply({ content: "❌ Erro: Comando restrito a Administradores e Moderadores.", ephemeral: true });
+      }
+    }
+
     if (interaction.customId === "staff_lock") {
       await interaction.channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: false });
-      await interaction.reply({ content: "🔒 Este canal foi bloqueado para membros comuns." });
+      await interaction.reply({ content: "🔒 Canal trancado com sucesso." });
     }
     if (interaction.customId === "staff_unlock") {
       await interaction.channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: true });
-      await interaction.reply({ content: "🔓 Este canal foi reaberto com sucesso." });
+      await interaction.reply({ content: "🔓 Canal aberto para conversas." });
+    }
+    if (interaction.customId === "staff_purge") {
+      const mensagens = await interaction.channel.messages.fetch({ limit: 50 });
+      await interaction.channel.bulkDelete(mensagens, true);
+      await interaction.reply({ content: "🧹 Mensagens limpas com sucesso por um Administrador.", ephemeral: true });
+    }
+    if (interaction.customId === "staff_mute_info") {
+      await interaction.reply({ content: "🔇 **Como Muta:** Use a interface do Discord clicando com o botão direito no usuário → *Castigo* ou configure um cargo sem permissão para falar.", ephemeral: true });
+    }
+    if (interaction.customId === "staff_ban_info") {
+      await interaction.reply({ content: "🔨 **Como Banir:** Digite `/banir` para remover o infrator e enviar os logs automatizados para o canal configurado.", ephemeral: true });
+    }
+    if (interaction.customId === "staff_aviso_rapido") {
+      const embedAviso = new EmbedBuilder()
+        .setTitle("⚠️ AVISO IMPORTANTE — STAFF")
+        .setDescription("Por favor, respeitem as regras do canal de texto para evitar advertências desnecessárias da moderação.")
+        .setColor("#f1c40f");
+      await interaction.channel.send({ embeds: [embedAviso] });
+      await interaction.reply({ content: "✅ Aviso enviado.", ephemeral: true });
+    }
+    if (interaction.customId === "staff_evento_info") {
+      const embedEvento = new EmbedBuilder()
+        .setTitle("🎉 NOVO EVENTO INICIADO!")
+        .setDescription("Um evento oficial acaba de começar dentro do nosso servidor de Minecraft! Entre agora mesmo para participar das gincanas e recompensas de Pixelmon!")
+        .setColor("#2ecc71");
+      await interaction.channel.send({ content: "@everyone", embeds: [embedEvento] });
+      await interaction.reply({ content: "✅ Alerta de evento enviado.", ephemeral: true });
     }
     
-    // Tratamentos do ticket antigo preservados
     if (interaction.customId === "close_ticket") {
       await interaction.reply({ content: "🔒 Fechando canal em 5 segundos..." });
       if (db.ai_tickets[interaction.channel.id]) { delete db.ai_tickets[interaction.channel.id]; saveDB(); }
@@ -379,17 +393,15 @@ client.on("messageCreate", async (message) => {
     let respostaTexto = `Olá! Descreva sua dúvida sobre o Arcadiamon ou chame a Moderação por meio dos botões acima!`;
 
     if (pergunta.includes("ip") || pergunta.includes("porta") || pergunta.includes("entrar") || pergunta.includes("como entra")) {
-      respostaTexto = `🎮 **COMO ENTRAR NO SERVIDOR (Minecraft Bedrock / MCPE):**\n\n` +
+      respostaTexto = `🌟 **COMO ENTRAR NO SERVIDOR (Minecraft Bedrock / MCPE):**\n\n` +
                       `1️⃣ Entre no seu Minecraft e clique em **Jogar**.\n` +
                       `2️⃣ Vá até a aba **Servidores** e clique em **Adicionar Servidor**.\n` +
-                      `3️⃣ Nome: \`Arcadiamon\`\n` +
-                      `4️⃣ Endereço (IP): \`arcadiamon.blazebr.xyz\`\n` +
-                      `5️⃣ Porta: \`28606\`\n\n` +
-                      `Clique em **Salvar** e venha se divertir!`;
+                      `3️⃣ Endereço (IP): \`arcadiamon.blazebr.xyz\`\n` +
+                      `4️⃣ Porta: \`28606\``;
     } else if (pergunta.includes("pegar") || pergunta.includes("mod") || pergunta.includes("coisas") || pergunta.includes("pokemon")) {
       respostaTexto = `🎒 **COMO PEGAR COISAS DO MOD DE POKÉMON:**\n\n` +
-                      `• **Aqui no Discord:** Use o comando de barra `/loja` para gastar suas moedas obtidas com o `/daily`. Você também pode consultar o seu inventário virtual usando `/inv`.\n\n` +
-                      `• **No Servidor (Minecraft):** Quando você entra pela primeira vez, você ganha seu Pokémon inicial automaticamente por interface. Para coletar itens adicionais, insígnias ou Pokebolas use o comando \`/kit\` dentro do jogo!`;
+                      `• **No Discord:** Use o comando \`/loja\` para ver nossos planos VIP e pacotes de itens em dinheiro real!\n\n` +
+                      `• **No Servidor (Minecraft):** Digite \`/kit\` no chat do jogo para resgatar os recursos básicos fornecidos gratuitamente!`;
     }
 
     const embedIa = new EmbedBuilder().setTitle("🤖 Suporte Automatizado").setDescription(respostaTexto).setColor("#9b59b6");
