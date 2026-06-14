@@ -19,7 +19,7 @@ const fs = require("fs");
 
 // Servidor Web para o Render (Mantém o bot 24/7)
 const app = express();
-app.get("/", (req, res) => res.send("Arcadiamon V6 Ativo!"));
+app.get("/", (req, res) => res.send("Arcadiamon KamiMod Ativo!"));
 app.listen(process.env.PORT || 3000, () => console.log("Web server pronto."));
 
 const client = new Client({
@@ -44,11 +44,11 @@ if (!db.inventory) db.inventory = {};
 function saveDB() { fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2)); }
 
 // ================= CONFIGURAÇÕES IMPORTANTES =================
-// 1. Defina o ID do seu servidor aqui para os comandos carregarem na hora:
-const GUILD_ID = "1496287729388880063"; 
+// ⚠️ COLOQUE O ID DO SEU SERVIDOR AQUI PARA OS COMANDOS PEGAREM NA HORA
+const GUILD_ID = "COLOQUE_AQUI_O_ID_DO_SEU_SERVIDOR"; 
 
-// 2. ID do Canal de Logs vindo do Render ou definido manualmente:
-const LOGS_CHANNEL = process.env.LOGS_CHANNEL_ID || "1510042537509781534";
+// ID do Canal de Logs vindo do Render ou definido manualmente:
+const LOGS_CHANNEL = process.env.LOGS_CHANNEL_ID || "COLOQUE_AQUI_O_ID_DE_LOGS";
 
 // ================= REGISTRO DOS COMANDOS DE BARRA (SLASH) =================
 const commands = [
@@ -64,7 +64,7 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName("setup-staff")
-    .setDescription("Envia a central completa com ferramentas de punição, avisos e eventos.")
+    .setDescription("Envia o painel de administração e segurança no estilo KamiMod.")
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
   new SlashCommandBuilder()
@@ -113,12 +113,11 @@ client.on("ready", async () => {
   console.log(`🤖 Bot logado como ${client.user.tag}!`);
   const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
   try {
-    // Registro focado na Guild para não sofrer com o delay global do Discord
     await rest.put(
       Routes.applicationGuildCommands(client.user.id, GUILD_ID), 
       { body: commands }
     );
-    console.log("⚡ Comandos sincronizados instantaneamente no servidor!");
+    console.log("⚡ Comandos KamiMod sincronizados instantaneamente no servidor!");
   } catch (error) { console.error("Erro ao sincronizar comandos:", error); }
 });
 
@@ -179,27 +178,39 @@ client.on("interactionCreate", async (interaction) => {
     await interaction.reply({ embeds: [embedMinecraft] });
   }
 
-  // 🛠️ /setup-staff
+  // 🛠️ /setup-staff (Painel Admin Estilo KamiMod)
   if (commandName === "setup-staff") {
     const rowStaff1 = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId("staff_lock").setLabel("Trancar Chat 🔒").setStyle(ButtonStyle.Danger),
-      new ButtonBuilder().setCustomId("staff_unlock").setLabel("Abrir Chat 🔓").setStyle(ButtonStyle.Success),
-      new ButtonBuilder().setCustomId("staff_purge").setLabel("Limpar Chat 🧹").setStyle(ButtonStyle.Secondary)
+      new ButtonBuilder().setCustomId("kamimod_lock").setLabel("Trancar Chat 🔒").setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId("kamimod_unlock").setLabel("Abrir Chat 🔓").setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId("kamimod_purge").setLabel("Limpar Chat 🧹").setStyle(ButtonStyle.Secondary)
     );
 
     const rowStaff2 = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId("staff_mute_info").setLabel("Mute 🔇").setStyle(ButtonStyle.Primary),
-      new ButtonBuilder().setCustomId("staff_ban_info").setLabel("Ban 🔨").setStyle(ButtonStyle.Danger),
-      new ButtonBuilder().setCustomId("staff_aviso_rapido").setLabel("Enviar Aviso ⚠️").setStyle(ButtonStyle.Warning),
-      new ButtonBuilder().setCustomId("staff_evento_info").setLabel("Evento 🎉").setStyle(ButtonStyle.Success)
+      new ButtonBuilder().setCustomId("kamimod_warn").setLabel("Advertir (+1 Warn) ⚠️").setStyle(ButtonStyle.Warning),
+      new ButtonBuilder().setCustomId("kamimod_mute").setLabel("Mutar (Castigo) 🔇").setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId("kamimod_kick").setLabel("Expulsar 🦶").setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId("kamimod_ban").setLabel("Banir Usuário 🔨").setStyle(ButtonStyle.Danger)
     );
 
-    const embedStaffSetup = new EmbedBuilder()
-      .setTitle("⚙️ Central Suprema de Moderação — Arcadiamon")
-      .setDescription("Ações administrativas e ferramentas globais protegidas para uso exclusivo da Staff:")
-      .setColor("#2c3e50");
+    const rowStaff3 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId("kamimod_aviso").setLabel("Anúncio Oficial 📢").setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId("kamimod_evento").setLabel("Alerta de Evento 🎉").setStyle(ButtonStyle.Success)
+    );
 
-    await interaction.reply({ embeds: [embedStaffSetup], components: [rowStaff1, rowStaff2] });
+    const embedKamiPanel = new EmbedBuilder()
+      .setTitle("🛡️ SISTEMA KAMIMOD — PAINEL ADMINISTRATIVO")
+      .setDescription(
+        "Bem-vindo à central de controle de segurança do **Arcadiamon**.\n" +
+        "Utilize os botões abaixo para aplicar ações rápidas de moderação ou obter instruções de punição."
+      )
+      .addFields(
+        { name: "🔒 Segurança do Painel", value: "Apenas membros da Staff com permissões de moderação conseguem clicar nos botões.", inline: false }
+      )
+      .setColor("#2f3136")
+      .setTimestamp();
+
+    await interaction.reply({ embeds: [embedKamiPanel], components: [rowStaff1, rowStaff2, rowStaff3] });
   }
 
   // 🔨 /banir
@@ -245,24 +256,16 @@ client.on("interactionCreate", async (interaction) => {
         "━━━━━━━━━━━━━━━━━━\n" +
         "💰📦 **PACOTES DISPONÍVEIS**\n\n" +
         "🥉 **TREINADOR INICIANTE — R$4**\n" +
-        "🎒 Kit inicial avançado\n🟣 2 Master Balls\n💊 Itens básicos\n🐾 1 Pokémon raro\n\n" +
+        "🎒 Kit inicial avançado\n🟣 2 Master Balls\n🐾 1 Pokémon raro\n\n" +
         "🥈 **TREINADOR PRO — R$10**\n" +
-        "🎒 Kit completo\n🟣 5 Master Balls\n💊 Itens + cura\n🐾 2 Pokémon raros\n✨ 1 Shiny aleatório\n\n" +
+        "🎒 Kit completo\n🟣 5 Master Balls\n🐾 2 Pokémon raros\n✨ 1 Shiny aleatório\n\n" +
         "🥇 **MESTRE POKÉMON — R$18**\n" +
-        "🎒 Kit lendário\n🟣 10 Master Balls\n💊 Itens avançados\n🐾 1 Pokémon lendário\n✨ 2 Shinys\n\n" +
+        "🎒 Kit lendário\n🟣 10 Master Balls\n🐾 1 Pokémon lendário\n✨ 2 Shinys\n\n" +
         "👑 **PACOTE SUPREMO — R$24**\n" +
-        "🎒 Kit FULL OP\n🟣 20 Master Balls\n💊 Itens raros\n🐉 2 Lendários\n✨ 3 Shinys\n👑 Tag exclusiva\n" +
+        "🎒 Kit FULL OP\n🟣 20 Master Balls\n🐉 2 Lendários\n✨ 3 Shinys\n👑 Tag exclusiva\n" +
         "━━━━━━━━━━━━━━━━━━\n" +
-        "⚡🔥 **EXTRAS DISPONÍVEIS**\n" +
-        "🟣 1 Master Ball — R$1\n" +
-        "✨ Shiny aleatório — R$3\n" +
-        "🐉 Lendário aleatório — R$6\n" +
-        "━━━━━━━━━━━━━━━━━━\n" +
-        "✨ **KIT VIP POKÉMON** ✨\n" +
-        "Um pacote equilibrado para quem quer começar forte sem gastar muito!\n\n" +
-        "🎁 **O QUE INCLUI:**\n" +
-        "🐉 4 Pokémon raros\n💎 25.000 Coins\n🍬 32 Rare Candies\n🧿 10 Master Balls\n✨ 1 Pokémon Shiny aleatório\n🏷️ Tag exclusiva no chat\n\n" +
-        "💰 **PREÇO: R$35,90**"
+        "✨ **KIT VIP POKÉMON — R$35,90** ✨\n" +
+        "🐉 4 Pokémon raros | 💎 25k Coins | 🍬 32 Candies | 🧿 10 Master Balls | ✨ 1 Shiny | 🏷️ Tag VIP"
       )
       .setColor("#ffcc00");
 
@@ -303,7 +306,7 @@ client.on("interactionCreate", async (interaction) => {
     if (acao === "beijar") textoAcao = `💋 ${user} deu um beijo carinhoso em ${alvo}!`;
     if (acao === "abracar") textoAcao = `🤗 ${user} deu um abraço apertado em ${alvo}!`;
     if (acao === "chutar") textoAcao = `🦶 ${user} deu um chute em ${alvo}!`;
-    if (acao === "atacar") textoAcao = `⚔️ ${user} mandou seu Pokémon atacar o Pokémon de ${alvo}! Batalha valendo!`;
+    if (acao === "atacar") textoAcao = `⚔️ ${user} mandou seu Pokémon atacar o Pokémon de ${alvo}!`;
 
     const embedInterativo = new EmbedBuilder().setDescription(textoAcao).setColor("#e91e63");
     await interaction.reply({ embeds: [embedInterativo] });
@@ -360,53 +363,71 @@ client.on("interactionCreate", async (interaction) => {
     } catch (e) { console.error(e); }
   }
 
-  // ================= CONTROLE DE BOTÕES DA STAFF (🔒 APENAS MOD/ADM) =================
+  // ================= EVENTOS DOS BOTÕES DO PAINEL ADMIN KAMIMOD =================
   if (interaction.isButton()) {
-    const botoesStaff = ["staff_lock", "staff_unlock", "staff_purge", "staff_mute_info", "staff_ban_info", "staff_aviso_rapido", "staff_evento_info"];
+    const botoesKami = [
+      "kamimod_lock", "kamimod_unlock", "kamimod_purge", 
+      "kamimod_warn", "kamimod_mute", "kamimod_kick", 
+      "kamimod_ban", "kamimod_aviso", "kamimod_evento"
+    ];
     
-    if (botoesStaff.includes(interaction.customId)) {
+    if (botoesKami.includes(interaction.customId)) {
       if (!interaction.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) {
-        return interaction.reply({ content: "❌ Erro: Comando restrito a Administradores e Moderadores.", ephemeral: true });
+        return interaction.reply({ content: "❌ Permissão Negada: Você não faz parte da Staff Administrativa.", ephemeral: true });
       }
     }
 
-    if (interaction.customId === "staff_lock") {
+    if (interaction.customId === "kamimod_lock") {
       await interaction.channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: false });
-      await interaction.reply({ content: "🔒 Canal trancado com sucesso pela Staff." });
+      await interaction.reply({ content: "🔒 **KamiMod:** Este canal foi trancado por um Administrador." });
     }
-    if (interaction.customId === "staff_unlock") {
+
+    if (interaction.customId === "kamimod_unlock") {
       await interaction.channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: true });
-      await interaction.reply({ content: "🔓 Canal reaberto para conversas." });
+      await interaction.reply({ content: "🔓 **KamiMod:** Este canal foi desbloqueado pela Staff." });
     }
-    if (interaction.customId === "staff_purge") {
+
+    if (interaction.customId === "kamimod_purge") {
       const mensagens = await interaction.channel.messages.fetch({ limit: 50 });
       await interaction.channel.bulkDelete(mensagens, true).catch(() => {});
-      await interaction.reply({ content: "🧹 Mensagens limpas com sucesso por um Administrador.", ephemeral: true });
+      await interaction.reply({ content: "🧹 **KamiMod:** Chat limpo com sucesso.", ephemeral: true });
     }
-    if (interaction.customId === "staff_mute_info") {
-      await interaction.reply({ content: "🔇 **Como Muta:** Use a interface do Discord clicando com o botão direito no usuário → *Castigo* ou gerencie os cargos.", ephemeral: true });
+
+    if (interaction.customId === "kamimod_warn") {
+      await interaction.reply({ content: "⚠️ **Instrução de Advertência:** Utilize os comandos nativos de moderação ou registre o aviso diretamente no canal de logs adicionando o motivo.", ephemeral: true });
     }
-    if (interaction.customId === "staff_ban_info") {
-      await interaction.reply({ content: "🔨 **Como Banir:** Digite `/banir` para remover o infrator e disparar logs automáticos.", ephemeral: true });
+
+    if (interaction.customId === "kamimod_mute") {
+      await interaction.reply({ content: "🔇 **Instrução de Mute:** Clique com o botão direito no usuário → **Castigo** e defina o tempo necessário para silenciá-lo.", ephemeral: true });
     }
-    if (interaction.customId === "staff_aviso_rapido") {
+
+    if (interaction.customId === "kamimod_kick") {
+      await interaction.reply({ content: "🦶 **Instrução de Expulsão:** Para remover temporariamente o membro, vá nas opções de perfil dele dentro do servidor e selecione 'Expulsar'.", ephemeral: true });
+    }
+
+    if (interaction.customId === "kamimod_ban") {
+      await interaction.reply({ content: "🔨 **Instrução de Banimento:** Para banimentos automáticos estruturados com relatórios e logs, utilize o comando de barra `/banir` no chat.", ephemeral: true });
+    }
+
+    if (interaction.customId === "kamimod_aviso") {
       const embedAviso = new EmbedBuilder()
-        .setTitle("⚠️ AVISO IMPORTANTE — STAFF")
-        .setDescription("Por favor, respeitem as regras do canal de texto para evitar advertências da moderação.")
-        .setColor("#f1c40f");
+        .setTitle("📢 ANÚNCIO OFICIAL — DIRETORIA")
+        .setDescription("Atenção comunidade do Arcadiamon! Mantenham a ordem e sigam as diretrizes para garantir uma boa convivência de todos.")
+        .setColor("#3498db");
       await interaction.channel.send({ embeds: [embedAviso] });
-      await interaction.reply({ content: "✅ Aviso enviado.", ephemeral: true });
+      await interaction.reply({ content: "✅ Anúncio enviado com sucesso.", ephemeral: true });
     }
-    if (interaction.customId === "staff_evento_info") {
+
+    if (interaction.customId === "kamimod_evento") {
       const embedEvento = new EmbedBuilder()
-        .setTitle("🎉 NOVO EVENTO INICIADO!")
-        .setDescription("Um evento oficial acaba de começar dentro do nosso servidor de Minecraft! Entre agora mesmo para jogar!")
+        .setTitle("🎉 EVENTO REGÂMPAGO INICIADO!")
+        .setDescription("Preparem seus Pokémons! Um evento oficial acaba de começar dentro do servidor de Minecraft. Entrem para participar!")
         .setColor("#2ecc71");
       await interaction.channel.send({ content: "@everyone", embeds: [embedEvento] });
-      await interaction.reply({ content: "✅ Alerta de evento enviado.", ephemeral: true });
+      await interaction.reply({ content: "✅ Alerta de evento disparado.", ephemeral: true });
     }
     
-    // Fechar Canal de Ticket comum
+    // Fechar Canal de Ticket
     if (interaction.customId === "close_ticket") {
       await interaction.reply({ content: "🔒 Fechando canal em 5 segundos..." });
       if (db.ai_tickets[interaction.channel.id]) { delete db.ai_tickets[interaction.channel.id]; saveDB(); }
