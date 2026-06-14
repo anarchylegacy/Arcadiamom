@@ -1,8 +1,8 @@
-const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionsBitField, ModalBuilder, TextInputBuilder, TextInputStyle, UserSelectMenuBuilder, ChannelType, StringSelectMenuBuilder } = require("discord.js");
+const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionsBitField, ModalBuilder, TextInputBuilder, TextInputStyle, UserSelectMenuBuilder, ChannelType } = require("discord.js");
 const express = require("express");
 
 const app = express();
-app.get("/", (req, res) => res.send("Sistema de Ticket s!etup-ticket Ativo!"));
+app.get("/", (req, res) => res.send("Painel de Ticket Único e Bonito Online!"));
 app.listen(process.env.PORT || 3000);
 
 const client = new Client({
@@ -16,28 +16,28 @@ const client = new Client({
 
 const PREFIXO = "!"; 
 
-// Respostas da IA dentro dos tickets
+// Respostas Inteligentes e Diretas da IA
 const respostasIAAtendimento = [
-  "📢 **Sobre VIP e Compras:** Para consultar planos ou registrar ativações, envie o comprovante e seu nick aqui. Um Diretor fará a entrega manual em breve!",
-  "⚙️ **Reportar Bugs/Erros:** Para ajudar nossos desenvolvedores, descreva detalhadamente o erro, o passo a passo de como ele acontece e anexe imagens se tiver.",
-  "🎮 **Problemas de Conexão:** Verifique se seu launcher está na versão correta do servidor. Se usa mods, confirme se estão na pasta certa e se o Java está atualizado.",
-  "⚖️ **Denúncias e Revisões:** O respeito é obrigatório. Deixe sua justificativa acompanhada de provas em vídeo ou imagem. A diretoria revisará seu caso."
+  "📢 **Dúvidas sobre VIP ou Compras:** Para agilizar seu atendimento, envie o seu nick e o comprovante de pagamento aqui no chat. Um Diretor fará a entrega manual assim que visualizar!",
+  "⚙️ **Reportar Erros ou Bugs:** Detalhe o problema explicando o passo a passo de como ele acontece. Se tiver prints ou vídeos do erro, anexe aqui para ajudar nossos desenvolvedores.",
+  "🎮 **Problemas de Conexão ou IP:** Verifique se você está utilizando a versão exata do servidor em seu launcher. Certifique-se também de que o seu Java está totalmente atualizado.",
+  "⚖️ **Denúncias ou Revisão de Ban:** Mantenha a calma e envie sua justificativa acompanhada de provas concretas (imagens ou vídeos). A diretoria analisará o seu caso em breve."
 ];
 
 client.on("ready", () => {
-  console.log(`✅ ${client.user.tag} online! Comando s!etup-ticket configurado.`);
+  console.log(`✅ ${client.user.tag} online! Sistema de Ticket Único Ativo.`);
 });
 
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
-  // --- LEITURA DE MENSAGENS PELA IA DENTRO DOS TICKETS ---
+  // --- LEITURA AUTOMÁTICA DA IA DENTRO DO TICKET ---
   if (message.channel.name.startsWith("🎫-ticket-")) {
     await message.channel.sendTyping();
     
     setTimeout(async () => {
       const textoUser = message.content.toLowerCase();
-      let respostaCerta = "Analisei sua dúvida, mas ela parece necessitar de atendimento especializado. Por favor, aguarde um staffer humano assumir o seu ticket!";
+      let respostaCerta = "Analisei a sua mensagem. Para dúvidas complexas ou ações internas, por favor, aguarde um Administrador humano assumir o seu chamado!";
 
       if (textoUser.includes("vip") || textoUser.includes("comprar") || textoUser.includes("loja")) {
         respostaCerta = respostasIAAtendimento[0];
@@ -50,9 +50,9 @@ client.on("messageCreate", async (message) => {
       }
 
       const embedIA = new EmbedBuilder()
-        .setTitle("🤖 ASSISTENTE VIRTUAL (IA)")
+        .setTitle("🤖 ASSISTENTE VIRTUAL")
         .setDescription(respostaCerta)
-        .setFooter({ text: "Atendimento Automático — KamiMod IA" })
+        .setFooter({ text: "Atendimento Automático Inteligente" })
         .setColor("#9b59b6");
 
       await message.channel.send({ embeds: [embedIA] });
@@ -60,41 +60,33 @@ client.on("messageCreate", async (message) => {
     return;
   }
 
-  // NOVO COMANDO: s!etup-ticket (Gera o painel fixo de suporte para os membros)
+  // COMANDO s!etup-ticket (Painel Único e Super Limpo)
   if (message.content === "s!etup-ticket") {
     if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
-      return message.reply("❌ Apenas Administradores podem configurar o setup de tickets.");
+      return message.reply("❌ Apenas administradores podem usar este comando.");
     }
 
-    const embedSetupTicket = new EmbedBuilder()
+    const embedSetup = new EmbedBuilder()
       .setTitle("📩 CENTRAL DE ATENDIMENTO")
-      .setDescription("Selecione o motivo do seu atendimento no menu suspenso abaixo para abrir um ticket de suporte privado com a nossa equipe.")
-      .setFooter({ text: "Suporte Tecnológico — Arcadiamon" })
+      .setDescription("Precisa de ajuda da nossa equipe, reportar um problema ou realizar uma dúvida?\n\nClique no botão abaixo para abrir o seu ticket de suporte privado.")
+      .setFooter({ text: "Atendimento Rápido — Arcadiamon" })
       .setColor("#1abc9c");
 
-    const selectTicket = new StringSelectMenuBuilder()
-      .setCustomId("select_categoria_ticket")
-      .setPlaceholder("Escolha o motivo do suporte...")
-      .addOptions([
-        { label: "Suporte Geral", description: "Dúvidas ou problemas comuns", value: "Suporte Geral" },
-        { label: "Financeiro / VIP", description: "Problemas com compras ou ativações", value: "Financeiro" },
-        { label: "Reportar Bugs", description: "Erros técnicos no jogo ou servidor", value: "Bugs" },
-        { label: "Denúncias / Revisões", description: "Reportar infrações ou revisar ban", value: "Denúncias" }
-      ]);
+    const rowSetup = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId("ticket_abrir_unico").setLabel("Abrir Ticket 📩").setStyle(ButtonStyle.Success)
+    );
 
-    const rowSelect = new ActionRowBuilder().addComponents(selectTicket);
-
-    await message.channel.send({ embeds: [embedSetupTicket], components: [rowSelect] });
-    await message.delete().catch(() => {}); // Apaga a mensagem s!etup-ticket para o chat ficar limpo
+    await message.channel.send({ embeds: [embedSetup], components: [rowSetup] });
+    await message.delete().catch(() => {});
   }
 
-  // COMANDO: !painel (Apenas para ferramentas de Moderação/Staff)
+  // COMANDO !painel (Apenas para Staff / Moderação)
   if (message.content === `${PREFIXO}painel`) {
     if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) return;
 
     const embedMenu = new EmbedBuilder()
-      .setTitle("🛡️ KAMIMOD — MENU CENTRAL DE GERENCIAMENTO")
-      .setDescription("Escolha uma das abas abaixo para carregar as ferramentas no chat:")
+      .setTitle("🛡️ KAMIMOD — MENU CENTRAL")
+      .setDescription("Selecione uma das opções abaixo para carregar as ferramentas administrativas:")
       .setColor("#2f3136");
 
     const rowMenu = new ActionRowBuilder().addComponents(
@@ -106,10 +98,10 @@ client.on("messageCreate", async (message) => {
   }
 });
 
-// Interações de Cliques, Menus e Modais
+// Interações do Discord (Cliques, Menus e Modais)
 client.on("interactionCreate", async (interaction) => {
   
-  // Modais (Trocar Apelido)
+  // Modal de Apelido
   if (interaction.isModalSubmit()) {
     if (interaction.customId.startsWith("modal_nick_")) {
       const alvoId = interaction.customId.split("_")[2];
@@ -124,13 +116,16 @@ client.on("interactionCreate", async (interaction) => {
     return;
   }
 
-  // Criação do canal quando o usuário usa o menu suspenso do s!etup-ticket
-  if (interaction.isStringSelectMenu() && interaction.customId === "select_categoria_ticket") {
-    const categoriaEscolhida = interaction.values[0];
-    const nomeCanal = `🎫-ticket-${interaction.user.username}`;
+  if (!interaction.isButton() && !interaction.isUserSelectMenu()) return;
 
+  // --- BOTÃO DE ABRIR TICKET ÚNICO ---
+  if (interaction.customId === "ticket_abrir_unico") {
+    const nomeCanal = `🎫-ticket-${interaction.user.username}`;
     const canalExiste = interaction.guild.channels.cache.find(c => c.name === nomeCanal.toLowerCase());
-    if (canalExiste) return interaction.reply({ content: `❌ Você já possui um ticket aberto em <#${canalExiste.id}>.`, ephemeral: true });
+    
+    if (canalExiste) {
+      return interaction.reply({ content: `❌ Você já possui um ticket em andamento em <#${canalExiste.id}>.`, ephemeral: true });
+    }
 
     const canalTicket = await interaction.guild.channels.create({
       name: nomeCanal,
@@ -142,27 +137,31 @@ client.on("interactionCreate", async (interaction) => {
       ]
     });
 
-    const embedTicketAberto = new EmbedBuilder()
-      .setTitle(`🎫 SUPORTE — ${categoriaEscolhida.toUpperCase()}`)
-      .setDescription(`Olá <@${interaction.user.id}>! Seu ticket de **${categoriaEscolhida}** foi criado.\n\n🤖 **IA Suporte:** Digite sua dúvida caso queira uma resposta imediata da nossa inteligência artificial enquanto a Staff não assume o chamado.`)
+    const embedTicket = new EmbedBuilder()
+      .setTitle("🎫 ATENDIMENTO INICIADO")
+      .setDescription(`Olá <@${interaction.user.id}>, bem-vindo ao seu canal de suporte privado.\n\n🤖 **IA Integrada:** Se você veio tirar uma dúvida rápida sobre **VIP, BUGS, CONEXÃO ou REGRAS**, digite aqui embaixo que nossa IA tentará responder na hora enquanto a Staff se desloca para te atender!`)
       .setColor("#1abc9c");
 
     const rowFechar = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId("ticket_fechar_canal").setLabel("Fechar Ticket 🔒").setStyle(ButtonStyle.Danger)
     );
 
-    await canalTicket.send({ embeds: [embedTicketAberto], components: [rowFechar] });
-    return interaction.reply({ content: `✅ Seu ticket foi criado em <#${canalTicket.id}>!`, ephemeral: true });
+    await canalTicket.send({ embeds: [embedTicket], components: [rowFechar] });
+    return interaction.reply({ content: `✅ Seu ticket foi aberto com sucesso em <#${canalTicket.id}>!`, ephemeral: true });
   }
 
-  if (!interaction.isButton() && !interaction.isUserSelectMenu()) return;
+  // Fechar o canal de Ticket
+  if (interaction.customId === "ticket_fechar_canal") {
+    await interaction.reply("🔒 Removendo esta sala em 5 segundos...");
+    return setTimeout(() => interaction.channel.delete().catch(() => {}), 5000);
+  }
 
   const idFatiado = interaction.customId.split("_");
   const categoria = idFatiado[0];
   const acao = idFatiado[1];
   const alvoId = idFatiado[2];
 
-  // Abas do Painel Principal
+  // Controle de Abas Administrativas (!painel)
   if (categoria === "menu" && acao === "chat") {
     const embedChat = new EmbedBuilder().setTitle("💬 KAMIMOD — CENTRAL DO CHAT").setDescription("Opções de moderação para o canal de texto.").setColor("#3498db");
     const rowChat = new ActionRowBuilder().addComponents(
@@ -183,7 +182,7 @@ client.on("interactionCreate", async (interaction) => {
   }
 
   if (categoria === "menu" && acao === "voltar") {
-    const embedMenu = new EmbedBuilder().setTitle("🛡️ KAMIMOD — MENU CENTRAL DE GERENCIAMENTO").setDescription("Escolha uma das abas abaixo para carregar as ferramentas no chat:").setColor("#2f3136");
+    const embedMenu = new EmbedBuilder().setTitle("🛡️ KAMIMOD — MENU CENTRAL").setDescription("Selecione uma das opções abaixo para carregar as ferramentas administrativas:").setColor("#2f3136");
     const rowMenu = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId("menu_chat_aba").setLabel("Apenas Chat 💬").setStyle(ButtonStyle.Primary),
       new ButtonBuilder().setCustomId("menu_punir_aba").setLabel("Punir Membro 🔨").setStyle(ButtonStyle.Danger)
@@ -191,12 +190,7 @@ client.on("interactionCreate", async (interaction) => {
     return await interaction.update({ embeds: [embedMenu], components: [rowMenu] });
   }
 
-  if (interaction.customId === "ticket_fechar_canal") {
-    await interaction.reply("🔒 Removendo esta sala em 5 segundos...");
-    return setTimeout(() => interaction.channel.delete().catch(() => {}), 5000);
-  }
-
-  // Carrega botões de punição após escolher o membro por @
+  // Processa o menu de punição por @
   if (interaction.isUserSelectMenu() && interaction.customId === "select_user_punir") {
     const selectedId = interaction.values[0];
     const embedPunir = new EmbedBuilder().setTitle("🔨 CONTROLE DO MEMBRO").setDescription(`Aplicar ações em: <@${selectedId}>`).setColor("#e74c3c");
@@ -219,7 +213,7 @@ client.on("interactionCreate", async (interaction) => {
     return await interaction.update({ embeds: [embedPunir], components: [r1, r2, r3] });
   }
 
-  // Execuções de moderação de chat e usuários
+  // Execuções do Chat
   if (categoria === "chat" && acao === "lock") {
     await interaction.channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: false });
     return interaction.reply("🔒 Canal trancado.");
@@ -234,6 +228,7 @@ client.on("interactionCreate", async (interaction) => {
     return interaction.reply({ content: "🧹 Mensagens limpas.", ephemeral: true });
   }
 
+  // Execuções de Moderação de Membros
   const membroAlvo = alvoId ? await interaction.guild.members.fetch(alvoId).catch(() => null) : null;
 
   if (categoria === "usr" && acao === "ban") {
