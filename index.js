@@ -18,7 +18,7 @@ const express = require("express");
 const fs = require("fs");
 
 // Servidor Web para o Render (Mantém o bot 24/7)
-const app = express();
+const app = report || express();
 app.get("/", (req, res) => res.send("Arcadiamon KamiMod Ativo!"));
 app.listen(process.env.PORT || 3000, () => console.log("Web server pronto."));
 
@@ -44,8 +44,8 @@ if (!db.inventory) db.inventory = {};
 function saveDB() { fs.writeFileSync(DATA_FILE, JSON.stringify(db, null, 2)); }
 
 // ================= CONFIGURAÇÕES IMPORTANTES =================
-// ⚠️ COLOQUE O ID DO SEU SERVIDOR AQUI PARA OS COMANDOS PEGAREM NA HORA
-const GUILD_ID = "COLOQUE_AQUI_O_ID_DO_SEU_SERVIDOR"; 
+// ID do seu servidor configurado automaticamente para carregar na hora:
+const GUILD_ID = "1496287729388880063"; 
 
 // ID do Canal de Logs vindo do Render ou definido manualmente:
 const LOGS_CHANNEL = process.env.LOGS_CHANNEL_ID || "COLOQUE_AQUI_O_ID_DE_LOGS";
@@ -113,11 +113,16 @@ client.on("ready", async () => {
   console.log(`🤖 Bot logado como ${client.user.tag}!`);
   const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
   try {
+    // 🧹 Limpa os comandos globais travados em cache que estavam duplicando tudo
+    await rest.put(Routes.applicationCommands(client.user.id), { body: [] });
+    console.log("🧹 Comandos globais limpos para evitar duplicações!");
+
+    // Sincroniza apenas no seu servidor de forma instantânea
     await rest.put(
       Routes.applicationGuildCommands(client.user.id, GUILD_ID), 
       { body: commands }
     );
-    console.log("⚡ Comandos KamiMod sincronizados instantaneamente no servidor!");
+    console.log("⚡ Comandos KamiMod sincronizados e limpos apenas no seu servidor!");
   } catch (error) { console.error("Erro ao sincronizar comandos:", error); }
 });
 
@@ -420,7 +425,7 @@ client.on("interactionCreate", async (interaction) => {
 
     if (interaction.customId === "kamimod_evento") {
       const embedEvento = new EmbedBuilder()
-        .setTitle("🎉 EVENTO REGÂMPAGO INICIADO!")
+        .setTitle("🎉 EVENTO RELÂMPAGO INICIADO!")
         .setDescription("Preparem seus Pokémons! Um evento oficial acaba de começar dentro do servidor de Minecraft. Entrem para participar!")
         .setColor("#2ecc71");
       await interaction.channel.send({ content: "@everyone", embeds: [embedEvento] });
