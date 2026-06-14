@@ -2,7 +2,7 @@ const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder
 const express = require("express");
 
 const app = express();
-app.get("/", (req, res) => res.send("Central de Tickets com Categoria IA Online!"));
+app.get("/", (req, res) => res.send("Central de Tickets com IA Expandida Online!"));
 app.listen(process.env.PORT || 3000);
 
 const client = new Client({
@@ -16,51 +16,58 @@ const client = new Client({
 
 const PREFIXO = "!"; 
 
-// Banco de dados de respostas da IA
-const respostasIAAtendimento = [
-  "📢 **Dúvidas sobre VIP ou Compras:** Para agilizar seu atendimento, envie o seu nick e o comprovante de pagamento aqui no chat. Um Diretor fará a entrega manual assim que visualizar!",
-  "⚙️ **Reportar Erros ou Bugs:** Detalhe o problema explicando o passo a passo de como ele acontece. Se tiver prints ou vídeos do erro, anexe aqui para ajudar nossos desenvolvedores.",
-  "🎮 **Problemas de Conexão ou IP:** Verifique se você está utilizando a versão exata do servidor em seu launcher. Certifique-se também de que o seu Java está totalmente atualizado.",
-  "⚖️ **Denúncias ou Revisão de Ban:** Mantenha a calma e envie sua justificativa acompanhada de provas concretas (imagens ou vídeos). A diretoria analisará o seu caso em breve."
-];
+// Banco de dados expandido com mais respostas contextuais da IA
+const respostasIAAtendimento = {
+  vip: "📢 **VIP, Compras e Loja:** Para consultar planos, métodos de pagamento ou registrar ativações, envie o seu nick e o comprovante aqui no chat. Um Diretor fará a entrega manual assim que visualizar!",
+  bugs: "⚙️ **Bugs e Erros Técnicos:** Detalhe o problema explicando o passo a passo de como ele acontece. Se tiver prints ou vídeos do erro, anexe aqui para ajudar nossos programadores a resolverem mais rápido.",
+  conexao: "🎮 **Conexão, IP e Versão:** Verifique se você está utilizando a versão exata do servidor em seu launcher. Certifique-se também de que seus mods estão na pasta correta e que o Java está atualizado.",
+  regras: "⚖️ **Denúncias, Revisões e Regras:** Mantenha a calma e envie sua justificativa ou acusação acompanhada de provas concretas (links, prints ou vídeos). A diretoria analisará o caso em breve.",
+  staff: "👑 **Falar com a Staff / Ajuda Geral:** Entendido! Se o seu problema não se encaixa nas opções automáticas, digite a sua dúvida detalhadamente aqui e aguarde um Administrador humano assumir o seu chamado.",
+  Desempenho: "⚡ **Lag, Ping ou Queda de FPS:** Se você está enfrentando travamentos, verifique sua rota de internet ou tente alocar mais memória RAM no seu launcher. Se o servidor estiver instável, a nossa equipe técnica já estará trabalhando nisso!"
+};
 
 client.on("ready", () => {
-  console.log(`✅ ${client.user.tag} online! Sistema de Categorias com IA Integrada.`);
+  console.log(`✅ ${client.user.tag} online! IA atualizada com mais palavras-chave.`);
 });
 
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
-  // --- LEITURA DA IA DENTRO DOS CANAIS DE TICKET ---
+  // --- LEITURA INTELIGENTE DA IA EXPANDIDA ---
   if (message.channel.name.startsWith("🎫-ticket-") || message.channel.name.startsWith("🤖-ia-")) {
     await message.channel.sendTyping();
     
     setTimeout(async () => {
-      const textoUser = message.content.toLowerCase();
-      let respostaCerta = "Analisei a sua mensagem. Para dúvidas complexas ou ações internas, por favor, aguarde um Administrador humano assumir o seu chamado!";
+      const msgUser = message.content.toLowerCase();
+      let respostaFinal = "Analisei a sua mensagem. Para dúvidas complexas ou ações internas na conta, por favor, descreva seu problema detalhadamente e aguarde um Administrador humano assumir o chamado!";
 
-      if (textoUser.includes("vip") || textoUser.includes("comprar") || textoUser.includes("loja")) {
-        respostaCerta = respostasIAAtendimento[0];
-      } else if (textoUser.includes("bug") || textoUser.includes("erro") || textoUser.includes("travado")) {
-        respostaCerta = respostasIAAtendimento[1];
-      } else if (textoUser.includes("entrar") || textoUser.includes("ip") || textoUser.includes("conexao")) {
-        respostaCerta = respostasIAAtendimento[2];
-      } else if (textoUser.includes("regra") || textoUser.includes("ban") || textoUser.includes("revisao") || textoUser.includes("denuncia")) {
-        respostaCerta = respostasIAAtendimento[3];
+      // Sistema avançado de checagem de novas palavras-chave
+      if (msgUser.includes("vip") || msgUser.includes("comprar") || msgUser.includes("loja") || msgUser.includes("site") || msgUser.includes("pagar") || msgUser.includes("ativar")) {
+        respostaFinal = respostasIAAtendimento.vip;
+      } else if (msgUser.includes("bug") || msgUser.includes("erro") || msgUser.includes("travado") || msgUser.includes("sumiu") || msgUser.includes("problema")) {
+        respostaFinal = respostasIAAtendimento.bugs;
+      } else if (msgUser.includes("entrar") || msgUser.includes("ip") || msgUser.includes("conexao") || msgUser.includes("versao") || msgUser.includes("launcher") || msgUser.includes("minecraft")) {
+        respostaFinal = respostasIAAtendimento.conexao;
+      } else if (msgUser.includes("regra") || msgUser.includes("ban") || msgUser.includes("revisao") || msgUser.includes("denuncia") || msgUser.includes("hack") || msgUser.includes("xiter") || msgUser.includes("ofensa")) {
+        respostaFinal = respostasIAAtendimento.regras;
+      } else if (msgUser.includes("lag") || msgUser.includes("ping") || msgUser.includes("fps") || msgUser.includes("queda") || msgUser.includes("travando")) {
+        respostaFinal = respostasIAAtendimento.Desempenho;
+      } else if (msgUser.includes("staff") || msgUser.includes("ajuda") || msgUser.includes("suporte") || msgUser.includes("humano") || msgUser.includes("alguem") || msgUser.includes("admin")) {
+        respostaFinal = respostasIAAtendimento.staff;
       }
 
       const embedIA = new EmbedBuilder()
         .setTitle("🤖 ASSISTENTE VIRTUAL (IA)")
-        .setDescription(respostaCerta)
-        .setFooter({ text: "Atendimento Automático Inteligente" })
+        .setDescription(respostaFinal)
+        .setFooter({ text: "Atendimento Automático Inteligente — KamiMod" })
         .setColor("#9b59b6");
 
       await message.channel.send({ embeds: [embedIA] });
-    }, 1500);
+    }, 1200);
     return;
   }
 
-  // COMANDO s!etup-ticket (Painel de Categorias contendo a Opção de IA)
+  // COMANDO s!etup-ticket
   if (message.content === "s!etup-ticket") {
     if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
       return message.reply("❌ Apenas administradores podem usar este comando.");
@@ -68,11 +75,10 @@ client.on("messageCreate", async (message) => {
 
     const embedSetup = new EmbedBuilder()
       .setTitle("📩 CENTRAL DE ATENDIMENTO")
-      .setDescription("Selecione a categoria do seu problema no menu suspenso abaixo para abrir um chamado privado.\n\n🤖 Se deseja apenas tirar dúvidas rápidas sem chamar a Staff, escolha a opção **Atendimento com IA**.")
+      .setDescription("Selecione a categoria do seu problema no menu suspenso abaixo para abrir um chamado privado.\n\n🤖 Se deseja apenas tirar dúvidas rápidas com nosso sistema automatizado, escolha a opção **Atendimento com IA**.")
       .setFooter({ text: "Suporte Técnico — Arcadiamon" })
       .setColor("#1abc9c");
 
-    // Menu Dropdown com as categorias padrão + a categoria de Atendimento IA
     const selectTicket = new StringSelectMenuBuilder()
       .setCustomId("select_categoria_ticket")
       .setPlaceholder("Selecione o motivo do suporte...")
@@ -90,7 +96,7 @@ client.on("messageCreate", async (message) => {
     await message.delete().catch(() => {});
   }
 
-  // COMANDO !painel (Moderação da Staff)
+  // COMANDO !painel
   if (message.content === `${PREFIXO}painel`) {
     if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) return;
 
@@ -121,16 +127,14 @@ client.on("interactionCreate", async (interaction) => {
       if (!membroAlvo) return interaction.reply({ content: "❌ Membro não encontrado.", ephemeral: true });
       await membroAlvo.setNickname(novoNick)
         .then(() => interaction.reply(`📝 Apelido de <@${alvoId}> alterado para: **${novoNick}**.`))
-        .catch(() => interaction.reply({ content: "❌ Erro de hierarquia de cargos do bot.", ephemeral: true }));
+        .catch(() => interaction.reply({ content: "❌ Erro de hierarquia do bot.", ephemeral: true }));
     }
     return;
   }
 
-  // --- SELEÇÃO DE CATEGORIA DE TICKET (DROPDOWN) ---
+  // Seleção de Categoria de Ticket (Dropdown)
   if (interaction.isStringSelectMenu() && interaction.customId === "select_categoria_ticket") {
     const categoriaEscolhida = interaction.values[0];
-    
-    // Define o prefixo do nome do canal dependendo se escolheu IA ou Staff
     const prefixoCanal = categoriaEscolhida === "Atendimento IA" ? "🤖-ia-" : "🎫-ticket-";
     const nomeCanal = `${prefixoCanal}${interaction.user.username}`;
     
@@ -139,7 +143,6 @@ client.on("interactionCreate", async (interaction) => {
       return interaction.reply({ content: `❌ Você já possui um canal de atendimento aberto em <#${canalExiste.id}>.`, ephemeral: true });
     }
 
-    // Cria o canal focado e privado
     const canalTicket = await interaction.guild.channels.create({
       name: nomeCanal,
       type: ChannelType.GuildText,
@@ -150,12 +153,11 @@ client.on("interactionCreate", async (interaction) => {
       ]
     });
 
-    // Configura o visual da mensagem interna baseado no tipo escolhido
-    let descricaoEmbed = `Olá <@${interaction.user.id}>! Seu ticket focado em **${categoriaEscolhida}** foi aberto.\n\nDescreva seu problema enquanto a equipe é notificada!`;
+    let descricaoEmbed = `Olá <@${interaction.user.id}>! Seu ticket focado em **${categoriaEscolhida}** foi aberto.\n\nDescreva seu problema detalhadamente enquanto a equipe é notificada!`;
     let corEmbed = "#1abc9c";
 
     if (categoriaEscolhida === "Atendimento IA") {
-      descricaoEmbed = `Olá <@${interaction.user.id}>! Este é o seu espaço exclusivo de **Atendimento com Inteligência Artificial**.\n\n✍️ **Como funciona:** Digite qualquer dúvida sobre VIP, Bugs, Regras ou Erros aqui abaixo. Eu irei processar o texto e te responder instantaneamente!`;
+      descricaoEmbed = `Olá <@${interaction.user.id}>! Este é o seu espaço de **Atendimento com Inteligência Artificial**.\n\n✍️ Digite qualquer dúvida sobre VIPs, Lojas, Bugs, Regras, Conexão ou problemas com Lag e FPS aqui abaixo. Eu responderei na hora!`;
       corEmbed = "#9b59b6";
     }
 
@@ -174,7 +176,6 @@ client.on("interactionCreate", async (interaction) => {
 
   if (!interaction.isButton() && !interaction.isUserSelectMenu()) return;
 
-  // Fechar Canais (Ticket ou IA)
   if (interaction.customId === "ticket_fechar_canal") {
     await interaction.reply("🔒 Removendo esta sala em 5 segundos...");
     return setTimeout(() => interaction.channel.delete().catch(() => {}), 5000);
@@ -185,7 +186,7 @@ client.on("interactionCreate", async (interaction) => {
   const acao = idFatiado[1];
   const alvoId = idFatiado[2];
 
-  // Controle de Abas Administrativas (!painel)
+  // Abas do !painel administrativo
   if (categoria === "menu" && acao === "chat") {
     const embedChat = new EmbedBuilder().setTitle("💬 KAMIMOD — CENTRAL DO CHAT").setDescription("Opções de moderação para o canal de texto.").setColor("#3498db");
     const rowChat = new ActionRowBuilder().addComponents(
@@ -214,7 +215,7 @@ client.on("interactionCreate", async (interaction) => {
     return await interaction.update({ embeds: [embedMenu], components: [rowMenu] });
   }
 
-  // Painel de Moderação por @
+  // Painel de Punição
   if (interaction.isUserSelectMenu() && interaction.customId === "select_user_punir") {
     const selectedId = interaction.values[0];
     const embedPunir = new EmbedBuilder().setTitle("🔨 CONTROLE DO MEMBRO").setDescription(`Aplicar ações em: <@${selectedId}>`).setColor("#e74c3c");
@@ -237,7 +238,7 @@ client.on("interactionCreate", async (interaction) => {
     return await interaction.update({ embeds: [embedPunir], components: [r1, r2, r3] });
   }
 
-  // Ações de Moderação de Chat
+  // Execuções do Chat
   if (categoria === "chat" && acao === "lock") {
     await interaction.channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: false });
     return interaction.reply("🔒 Canal trancado.");
@@ -252,7 +253,7 @@ client.on("interactionCreate", async (interaction) => {
     return interaction.reply({ content: "🧹 Mensagens limpas.", ephemeral: true });
   }
 
-  // Ações de Moderação de Usuários
+  // Execuções de Membros
   const membroAlvo = alvoId ? await interaction.guild.members.fetch(alvoId).catch(() => null) : null;
 
   if (categoria === "usr" && acao === "ban") {
