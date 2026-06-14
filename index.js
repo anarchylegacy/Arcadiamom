@@ -1,8 +1,8 @@
-const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionsBitField, ModalBuilder, TextInputBuilder, TextInputStyle, UserSelectMenuBuilder, ChannelType } = require("discord.js");
+const { Client, GatewayIntentBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionsBitField, ModalBuilder, TextInputBuilder, TextInputStyle, UserSelectMenuBuilder, ChannelType, StringSelectMenuBuilder } = require("discord.js");
 const express = require("express");
 
 const app = express();
-app.get("/", (req, res) => res.send("Painel de Ticket Único e Bonito Online!"));
+app.get("/", (req, res) => res.send("Central de Tickets com Categoria IA Online!"));
 app.listen(process.env.PORT || 3000);
 
 const client = new Client({
@@ -16,7 +16,7 @@ const client = new Client({
 
 const PREFIXO = "!"; 
 
-// Respostas Inteligentes e Diretas da IA
+// Banco de dados de respostas da IA
 const respostasIAAtendimento = [
   "📢 **Dúvidas sobre VIP ou Compras:** Para agilizar seu atendimento, envie o seu nick e o comprovante de pagamento aqui no chat. Um Diretor fará a entrega manual assim que visualizar!",
   "⚙️ **Reportar Erros ou Bugs:** Detalhe o problema explicando o passo a passo de como ele acontece. Se tiver prints ou vídeos do erro, anexe aqui para ajudar nossos desenvolvedores.",
@@ -25,14 +25,14 @@ const respostasIAAtendimento = [
 ];
 
 client.on("ready", () => {
-  console.log(`✅ ${client.user.tag} online! Sistema de Ticket Único Ativo.`);
+  console.log(`✅ ${client.user.tag} online! Sistema de Categorias com IA Integrada.`);
 });
 
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
-  // --- LEITURA AUTOMÁTICA DA IA DENTRO DO TICKET ---
-  if (message.channel.name.startsWith("🎫-ticket-")) {
+  // --- LEITURA DA IA DENTRO DOS CANAIS DE TICKET ---
+  if (message.channel.name.startsWith("🎫-ticket-") || message.channel.name.startsWith("🤖-ia-")) {
     await message.channel.sendTyping();
     
     setTimeout(async () => {
@@ -50,7 +50,7 @@ client.on("messageCreate", async (message) => {
       }
 
       const embedIA = new EmbedBuilder()
-        .setTitle("🤖 ASSISTENTE VIRTUAL")
+        .setTitle("🤖 ASSISTENTE VIRTUAL (IA)")
         .setDescription(respostaCerta)
         .setFooter({ text: "Atendimento Automático Inteligente" })
         .setColor("#9b59b6");
@@ -60,7 +60,7 @@ client.on("messageCreate", async (message) => {
     return;
   }
 
-  // COMANDO s!etup-ticket (Painel Único e Super Limpo)
+  // COMANDO s!etup-ticket (Painel de Categorias contendo a Opção de IA)
   if (message.content === "s!etup-ticket") {
     if (!message.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
       return message.reply("❌ Apenas administradores podem usar este comando.");
@@ -68,19 +68,29 @@ client.on("messageCreate", async (message) => {
 
     const embedSetup = new EmbedBuilder()
       .setTitle("📩 CENTRAL DE ATENDIMENTO")
-      .setDescription("Precisa de ajuda da nossa equipe, reportar um problema ou realizar uma dúvida?\n\nClique no botão abaixo para abrir o seu ticket de suporte privado.")
-      .setFooter({ text: "Atendimento Rápido — Arcadiamon" })
+      .setDescription("Selecione a categoria do seu problema no menu suspenso abaixo para abrir um chamado privado.\n\n🤖 Se deseja apenas tirar dúvidas rápidas sem chamar a Staff, escolha a opção **Atendimento com IA**.")
+      .setFooter({ text: "Suporte Técnico — Arcadiamon" })
       .setColor("#1abc9c");
 
-    const rowSetup = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId("ticket_abrir_unico").setLabel("Abrir Ticket 📩").setStyle(ButtonStyle.Success)
-    );
+    // Menu Dropdown com as categorias padrão + a categoria de Atendimento IA
+    const selectTicket = new StringSelectMenuBuilder()
+      .setCustomId("select_categoria_ticket")
+      .setPlaceholder("Selecione o motivo do suporte...")
+      .addOptions([
+        { label: "Atendimento com IA 🤖", description: "Fale diretamente com nossa inteligência artificial para dúvidas rápidas", value: "Atendimento IA" },
+        { label: "Suporte Geral 💬", description: "Dúvidas gerais com a equipe de Staff", value: "Suporte Geral" },
+        { label: "Financeiro / VIP 💰", description: "Problemas com compras, doações ou ativações", value: "Financeiro" },
+        { label: "Reportar Bugs ⚙️", description: "Erros técnicos encontrados no jogo ou servidor", value: "Bugs" },
+        { label: "Denúncias e Revisões ⚖️", description: "Contestar punições ou reportar jogadores", value: "Denúncias" }
+      ]);
 
-    await message.channel.send({ embeds: [embedSetup], components: [rowSetup] });
+    const rowSelect = new ActionRowBuilder().addComponents(selectTicket);
+
+    await message.channel.send({ embeds: [embedSetup], components: [rowSelect] });
     await message.delete().catch(() => {});
   }
 
-  // COMANDO !painel (Apenas para Staff / Moderação)
+  // COMANDO !painel (Moderação da Staff)
   if (message.content === `${PREFIXO}painel`) {
     if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) return;
 
@@ -98,7 +108,7 @@ client.on("messageCreate", async (message) => {
   }
 });
 
-// Interações do Discord (Cliques, Menus e Modais)
+// Interações de Menus, Cliques e Modais
 client.on("interactionCreate", async (interaction) => {
   
   // Modal de Apelido
@@ -116,17 +126,20 @@ client.on("interactionCreate", async (interaction) => {
     return;
   }
 
-  if (!interaction.isButton() && !interaction.isUserSelectMenu()) return;
-
-  // --- BOTÃO DE ABRIR TICKET ÚNICO ---
-  if (interaction.customId === "ticket_abrir_unico") {
-    const nomeCanal = `🎫-ticket-${interaction.user.username}`;
-    const canalExiste = interaction.guild.channels.cache.find(c => c.name === nomeCanal.toLowerCase());
+  // --- SELEÇÃO DE CATEGORIA DE TICKET (DROPDOWN) ---
+  if (interaction.isStringSelectMenu() && interaction.customId === "select_categoria_ticket") {
+    const categoriaEscolhida = interaction.values[0];
     
+    // Define o prefixo do nome do canal dependendo se escolheu IA ou Staff
+    const prefixoCanal = categoriaEscolhida === "Atendimento IA" ? "🤖-ia-" : "🎫-ticket-";
+    const nomeCanal = `${prefixoCanal}${interaction.user.username}`;
+    
+    const canalExiste = interaction.guild.channels.cache.find(c => c.name === nomeCanal.toLowerCase());
     if (canalExiste) {
-      return interaction.reply({ content: `❌ Você já possui um ticket em andamento em <#${canalExiste.id}>.`, ephemeral: true });
+      return interaction.reply({ content: `❌ Você já possui um canal de atendimento aberto em <#${canalExiste.id}>.`, ephemeral: true });
     }
 
+    // Cria o canal focado e privado
     const canalTicket = await interaction.guild.channels.create({
       name: nomeCanal,
       type: ChannelType.GuildText,
@@ -137,20 +150,31 @@ client.on("interactionCreate", async (interaction) => {
       ]
     });
 
+    // Configura o visual da mensagem interna baseado no tipo escolhido
+    let descricaoEmbed = `Olá <@${interaction.user.id}>! Seu ticket focado em **${categoriaEscolhida}** foi aberto.\n\nDescreva seu problema enquanto a equipe é notificada!`;
+    let corEmbed = "#1abc9c";
+
+    if (categoriaEscolhida === "Atendimento IA") {
+      descricaoEmbed = `Olá <@${interaction.user.id}>! Este é o seu espaço exclusivo de **Atendimento com Inteligência Artificial**.\n\n✍️ **Como funciona:** Digite qualquer dúvida sobre VIP, Bugs, Regras ou Erros aqui abaixo. Eu irei processar o texto e te responder instantaneamente!`;
+      corEmbed = "#9b59b6";
+    }
+
     const embedTicket = new EmbedBuilder()
-      .setTitle("🎫 ATENDIMENTO INICIADO")
-      .setDescription(`Olá <@${interaction.user.id}>, bem-vindo ao seu canal de suporte privado.\n\n🤖 **IA Integrada:** Se você veio tirar uma dúvida rápida sobre **VIP, BUGS, CONEXÃO ou REGRAS**, digite aqui embaixo que nossa IA tentará responder na hora enquanto a Staff se desloca para te atender!`)
-      .setColor("#1abc9c");
+      .setTitle(`🎫 CHAMADO INICIADO — ${categoriaEscolhida.toUpperCase()}`)
+      .setDescription(descricaoEmbed)
+      .setColor(corEmbed);
 
     const rowFechar = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId("ticket_fechar_canal").setLabel("Fechar Ticket 🔒").setStyle(ButtonStyle.Danger)
+      new ButtonBuilder().setCustomId("ticket_fechar_canal").setLabel("Fechar Atendimento 🔒").setStyle(ButtonStyle.Danger)
     );
 
     await canalTicket.send({ embeds: [embedTicket], components: [rowFechar] });
-    return interaction.reply({ content: `✅ Seu ticket foi aberto com sucesso em <#${canalTicket.id}>!`, ephemeral: true });
+    return interaction.reply({ content: `✅ Canal criado com sucesso em <#${canalTicket.id}>!`, ephemeral: true });
   }
 
-  // Fechar o canal de Ticket
+  if (!interaction.isButton() && !interaction.isUserSelectMenu()) return;
+
+  // Fechar Canais (Ticket ou IA)
   if (interaction.customId === "ticket_fechar_canal") {
     await interaction.reply("🔒 Removendo esta sala em 5 segundos...");
     return setTimeout(() => interaction.channel.delete().catch(() => {}), 5000);
@@ -190,7 +214,7 @@ client.on("interactionCreate", async (interaction) => {
     return await interaction.update({ embeds: [embedMenu], components: [rowMenu] });
   }
 
-  // Processa o menu de punição por @
+  // Painel de Moderação por @
   if (interaction.isUserSelectMenu() && interaction.customId === "select_user_punir") {
     const selectedId = interaction.values[0];
     const embedPunir = new EmbedBuilder().setTitle("🔨 CONTROLE DO MEMBRO").setDescription(`Aplicar ações em: <@${selectedId}>`).setColor("#e74c3c");
@@ -213,7 +237,7 @@ client.on("interactionCreate", async (interaction) => {
     return await interaction.update({ embeds: [embedPunir], components: [r1, r2, r3] });
   }
 
-  // Execuções do Chat
+  // Ações de Moderação de Chat
   if (categoria === "chat" && acao === "lock") {
     await interaction.channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: false });
     return interaction.reply("🔒 Canal trancado.");
@@ -228,7 +252,7 @@ client.on("interactionCreate", async (interaction) => {
     return interaction.reply({ content: "🧹 Mensagens limpas.", ephemeral: true });
   }
 
-  // Execuções de Moderação de Membros
+  // Ações de Moderação de Usuários
   const membroAlvo = alvoId ? await interaction.guild.members.fetch(alvoId).catch(() => null) : null;
 
   if (categoria === "usr" && acao === "ban") {
